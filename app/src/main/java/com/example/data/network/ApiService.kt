@@ -88,6 +88,35 @@ data class StatusUpdateRequest(
 )
 
 @JsonClass(generateAdapter = true)
+data class NetworkTask(
+    val id: Long? = null,
+    val server_id: Long? = null,
+    val local_id: Long? = null,
+    val title: String,
+    val description: String? = null,
+    val due_date: String? = null,
+    val priority: String? = "medium",
+    val is_completed: Boolean = false,
+    val work_order_id: Long? = null,
+    val job_title: String? = null,
+    val user_id: Long? = null,
+    val created_at: String? = null,
+    val updated_at: String? = null
+)
+
+@JsonClass(generateAdapter = true)
+data class TaskResponseWrapper(val data: List<NetworkTask>? = null)
+
+@JsonClass(generateAdapter = true)
+data class TaskSyncRequest(val tasks: List<NetworkTask>)
+
+@JsonClass(generateAdapter = true)
+data class TaskSyncResponse(
+    val synced: List<Map<String, Long?>>? = null,
+    val tasks: List<NetworkTask>? = null
+)
+
+@JsonClass(generateAdapter = true)
 data class DashboardStats(
     val total_deals: Int? = null,
     val totalDeals: Int? = null,
@@ -146,4 +175,22 @@ interface ApiService {
         @Path("id") id: Long,
         @Body job: NetworkJob
     ): Response<ResponseBody>
+
+    @GET("api/tasks")
+    suspend fun getTasks(
+        @Query("filter") filter: String? = null,
+        @Query("since") since: String? = null
+    ): Response<ResponseBody>
+
+    @POST("api/tasks")
+    suspend fun createTask(@Body task: NetworkTask): Response<ResponseBody>
+
+    @PATCH("api/tasks/{id}")
+    suspend fun updateTask(@Path("id") id: Long, @Body task: NetworkTask): Response<ResponseBody>
+
+    @DELETE("api/tasks/{id}")
+    suspend fun deleteTask(@Path("id") id: Long): Response<ResponseBody>
+
+    @POST("api/tasks/sync")
+    suspend fun syncTasks(@Body request: TaskSyncRequest): Response<TaskSyncResponse>
 }

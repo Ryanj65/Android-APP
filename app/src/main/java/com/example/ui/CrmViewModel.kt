@@ -49,6 +49,7 @@ class CrmViewModel(
     init {
         if (isLoggedIn.value) {
             fetchJobsFromServer()
+            fetchTasksFromServer()
         }
     }
 
@@ -193,6 +194,7 @@ class CrmViewModel(
                     isLoggedIn.value = true
                     // Immediately fetch data
                     fetchJobsFromServer()
+                    fetchTasksFromServer()
                     onSuccess()
                 } else {
                     syncError.value = "Ошибка авторизации: " + (response.errorBody()?.string() ?: "Неверный логин или пароль")
@@ -238,6 +240,9 @@ class CrmViewModel(
                     dealsList.forEach { deal ->
                         repository.insertDeal(deal)
                     }
+                    
+                    // Fetch tasks from server
+                    fetchTasksFromServer()
                 } else {
                     syncError.value = "Не удалось загрузить данные с сервера"
                 }
@@ -309,9 +314,39 @@ class CrmViewModel(
         }
     }
 
+    fun fetchTasksFromServer() {
+        if (!isLoggedIn.value) return
+        viewModelScope.launch {
+            try {
+                val response = apiService.getTasks()
+                if (response.isSuccessful && response.body() != null) {
+                    val raw = response.body()!!.string()
+                    val adapter = com.example.data.network.NetworkParser.moshi
+                        .adapter(com.example.data.network.TaskResponseWrapper::class.java)
+                    val wrapper = adapter.fromJson(raw)
+                    wrapper?.data?.forEach { networkTask ->
+                        val task = com.example.data.network.NetworkParser.run { networkTask.toCrmTask() }
+                        repository.insertTask(task)
+                    }
+                }
+            } catch (e: Exception) { }
+        }
+    }
+
     // === TASKS BUSINESS LOGIC ===
     fun addTask(task: CrmTask) {
         viewModelScope.launch {
+            if (isLoggedIn.value) {
+                try {
+                    val networkTask = com.example.data.network.NetworkParser.run { task.toNetworkTask() }
+                    val response = apiService.createTask(networkTask)
+                    if (response.isSuccessful && response.body() != null) {
+                        // Задача создана на сервере, сохраняем локально
+                        repository.insertTask(task)
+                        return@launch
+                    }
+                } catch (e: Exception) { }
+            }
             repository.insertTask(task)
         }
     }
@@ -319,19 +354,26 @@ class CrmViewModel(
     fun updateTask(task: CrmTask) {
         viewModelScope.launch {
             repository.updateTask(task)
+            if (isLoggedIn.value && task.id != 0L) {
+                try {
+                    val networkTask = com.example.data.network.NetworkParser.run { task.toNetworkTask() }
+                    apiService.updateTask(task.id, networkTask)
+                } catch (e: Exception) { }
+            }
         }
     }
 
     fun deleteTask(task: CrmTask) {
         viewModelScope.launch {
             repository.deleteTask(task)
+            if (isLoggedIn.value && task.id != 0L) {
+                try { apiService.deleteTask(task.id) } catch (e: Exception) { }
+            }
         }
     }
 
     fun toggleTaskCompletion(task: CrmTask) {
-        viewModelScope.launch {
-            repository.updateTask(task.copy(isCompleted = !task.isCompleted))
-        }
+        updateTask(task.copy(isCompleted = !task.isCompleted))
     }
 
     fun getTasksForDeal(dealId: Long): Flow<List<CrmTask>> {

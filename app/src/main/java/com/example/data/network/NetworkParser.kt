@@ -1,6 +1,7 @@
 package com.example.data.network
 
 import com.example.data.ClientDeal
+import com.example.data.CrmTask
 import com.squareup.moshi.Moshi
 import com.squareup.moshi.kotlin.reflect.KotlinJsonAdapterFactory
 
@@ -174,5 +175,35 @@ object NetworkParser {
             carEngine = deal.carEngine,
             timestamp = deal.timestamp
         )
-    }
+     }
+
+    fun NetworkTask.toCrmTask(): CrmTask = CrmTask(
+        id = id ?: 0L,
+        title = title,
+        description = description ?: "",
+        dueDate = due_date ?: "",
+        priority = when (priority?.lowercase()) {
+            "high"   -> "HIGH"
+            "low"    -> "LOW"
+            else     -> "MEDIUM"
+        },
+        isCompleted = is_completed,
+        dealId = work_order_id
+    )
+
+    fun CrmTask.toNetworkTask(serverId: Long? = null): NetworkTask = NetworkTask(
+        id = if (id == 0L) null else id,
+        server_id = serverId,
+        local_id = id,
+        title = title,
+        description = description.ifEmpty { null },
+        due_date = dueDate.ifEmpty { null },
+        priority = when (priority) {
+            "HIGH" -> "high"
+            "LOW"  -> "low"
+            else   -> "medium"
+        },
+        is_completed = isCompleted,
+        work_order_id = dealId
+    )
 }
