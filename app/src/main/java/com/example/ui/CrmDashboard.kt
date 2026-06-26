@@ -63,6 +63,7 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.ExposedDropdownMenuBox
 import androidx.compose.material3.ExposedDropdownMenuDefaults
+import androidx.compose.material3.MenuAnchorType
 import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.HorizontalDivider
 import androidx.compose.material3.Icon
@@ -1343,23 +1344,7 @@ fun DealCard(deal: ClientDeal, onClick: () -> Unit) {
 
             Spacer(modifier = Modifier.width(8.dp))
 
-            // Fixed-width price column to ensure perfect alignment
-            Column(
-                modifier = Modifier.width(80.dp),
-                horizontalAlignment = Alignment.End
-            ) {
-                Text(
-                    text = formatCurrency(deal.dealValue),
-                    fontWeight = FontWeight.ExtraBold,
-                    fontSize = 14.sp,
-                    color = MaterialTheme.colorScheme.primary,
-                    textAlign = TextAlign.End
-                )
-            }
-
-            Spacer(modifier = Modifier.width(8.dp))
-
-            // Fixed-width status capsule & detailed status column
+            // Fixed-width status capsule & price column on the right
             Column(
                 modifier = Modifier.width(110.dp),
                 horizontalAlignment = Alignment.End
@@ -1377,17 +1362,16 @@ fun DealCard(deal: ClientDeal, onClick: () -> Unit) {
                         fontWeight = FontWeight.Bold
                     )
                 }
-                if (deal.detailedStatus.isNotEmpty()) {
-                    Spacer(modifier = Modifier.height(4.dp))
-                    Text(
-                        text = deal.detailedStatus,
-                        fontSize = 10.sp,
-                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f),
-                        maxLines = 1,
-                        overflow = TextOverflow.Ellipsis,
-                        textAlign = TextAlign.End
-                    )
-                }
+                
+                Spacer(modifier = Modifier.height(6.dp))
+                
+                Text(
+                    text = formatCurrency(deal.dealValue),
+                    fontWeight = FontWeight.ExtraBold,
+                    fontSize = 14.sp,
+                    color = MaterialTheme.colorScheme.primary,
+                    textAlign = TextAlign.End
+                )
             }
         }
     }
@@ -1793,7 +1777,7 @@ fun AddEditTaskDialog(
                         trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedPriority) },
                         modifier = Modifier
                             .fillMaxWidth()
-                            .menuAnchor()
+                            .menuAnchor(MenuAnchorType.PrimaryNotEditable, enabled = true)
                     )
                     ExposedDropdownMenu(
                         expanded = expandedPriority,
@@ -1826,7 +1810,7 @@ fun AddEditTaskDialog(
                         trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedDeals) },
                         modifier = Modifier
                             .fillMaxWidth()
-                            .menuAnchor()
+                            .menuAnchor(MenuAnchorType.PrimaryNotEditable, enabled = true)
                     )
                     ExposedDropdownMenu(
                         expanded = expandedDeals,
@@ -2551,7 +2535,7 @@ fun DetailRow(label: String, value: String, isPhone: Boolean = false, isEmail: B
 
 // Simple local currency formatter helper (Euros)
 fun formatCurrency(amount: Double): String {
-    val formatter = NumberFormat.getCurrencyInstance(Locale("de", "DE")) // standard EU/German layout: XX.XX €
+    val formatter = NumberFormat.getCurrencyInstance(Locale.GERMANY) // standard EU/German layout: XX.XX €
     return try {
         formatter.format(amount)
     } catch (e: Exception) {

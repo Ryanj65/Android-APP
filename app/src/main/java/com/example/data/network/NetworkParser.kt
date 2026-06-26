@@ -99,7 +99,12 @@ object NetworkParser {
             carVin = car_vin ?: carVin ?: "",
             carYear = car_year ?: carYear ?: "",
             carEngine = car_engine ?: carEngine ?: "",
-            timestamp = timestamp ?: System.currentTimeMillis()
+            timestamp = created_at?.let {
+                try {
+                    java.text.SimpleDateFormat("yyyy-MM-dd HH:mm:ss", java.util.Locale.getDefault())
+                        .parse(it)?.time
+                } catch (e: Exception) { null }
+            } ?: timestamp ?: System.currentTimeMillis()
         )
     }
 

@@ -20,7 +20,7 @@ abstract class CrmDatabase : RoomDatabase() {
                     CrmDatabase::class.java,
                     "crm_database"
                 )
-                .fallbackToDestructiveMigration()
+                .fallbackToDestructiveMigration(true)
                 .build()
                 INSTANCE = instance
                 instance

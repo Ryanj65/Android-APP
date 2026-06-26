@@ -83,7 +83,7 @@ class CrmViewModel(
             val now = System.currentTimeMillis()
             deals.filter { deal ->
                 val isRecent = (now - deal.timestamp) <= oneWeekMs
-                val matchesArchive = if (archive) !isRecent else isRecent
+                val matchesArchive = archive || isRecent
 
                 val matchesSearch = search.isEmpty() ||
                         deal.clientName.contains(search, ignoreCase = true) ||

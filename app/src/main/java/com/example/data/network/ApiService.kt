@@ -66,7 +66,8 @@ data class NetworkJob(
     val carYear: String? = null,
     val car_engine: String? = null,
     val carEngine: String? = null,
-    val timestamp: Long? = null
+    val timestamp: Long? = null,
+    val created_at: String? = null
 )
 
 @JsonClass(generateAdapter = true)
