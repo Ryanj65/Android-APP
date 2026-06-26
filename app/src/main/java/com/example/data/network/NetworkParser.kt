@@ -63,29 +63,17 @@ object NetworkParser {
     }
 
     fun NetworkJob.toClientDeal(): ClientDeal {
-        val resolvedDetailedStatus = detailed_status ?: detailedStatus ?: "Новая"
-        
-        // Resolve local status name from detailed_status
-        val resolvedLocalStatus = when {
-            resolvedDetailedStatus.equals("Новая", ignoreCase = true) -> "NEW"
-            resolvedDetailedStatus.equals("Диагностика", ignoreCase = true) -> "DIAGNOSTICS"
-            resolvedDetailedStatus.equals("В работе", ignoreCase = true) -> "IN_PROGRESS"
-            resolvedDetailedStatus.equals("Ожидает решения", ignoreCase = true) -> "AWAITING_DECISION"
-            resolvedDetailedStatus.equals("Ожидает запчасти", ignoreCase = true) -> "AWAITING_PARTS"
-            resolvedDetailedStatus.equals("Готово", ignoreCase = true) -> "READY"
-            resolvedDetailedStatus.equals("Выдано", ignoreCase = true) -> "ISSUED"
-            resolvedDetailedStatus.equals("Отменено", ignoreCase = true) -> "CANCELLED"
-            else -> {
-                // Fallback to server status
-                when (status) {
-                    "NEW" -> "NEW"
-                    "IN_PROGRESS" -> "IN_PROGRESS"
-                    "READY" -> "READY"
-                    "INVOICE" -> "AWAITING_PARTS"
-                    "CLOSED" -> "ISSUED"
-                    else -> "NEW"
-                }
-            }
+        // Маппинг статусов с API (lowercase) → локальные enum
+        val resolvedLocalStatus = when (status?.lowercase()) {
+            "new"              -> "NEW"
+            "diag"             -> "DIAGNOSTICS"
+            "in_progress"      -> "IN_PROGRESS"
+            "waiting_decision" -> "AWAITING_DECISION"
+            "waiting_parts"    -> "AWAITING_PARTS"
+            "done"             -> "READY"
+            "delivered"        -> "ISSUED"
+            "canceled"         -> "CANCELLED"
+            else               -> "NEW"
         }
 
         return ClientDeal(
@@ -96,7 +84,7 @@ object NetworkParser {
             company = company ?: "",
             dealValue = deal_value ?: dealValue ?: value ?: amount ?: 0.0,
             status = resolvedLocalStatus,
-            detailedStatus = resolvedDetailedStatus,
+            detailedStatus = resolvedLocalStatus,
             complaint = complaint ?: "",
             diagnostics = diagnostics ?: "",
             solution = solution ?: "",
@@ -116,26 +104,28 @@ object NetworkParser {
     }
 
     fun fromClientDeal(deal: ClientDeal): NetworkJob {
-        // Map local deal.status (e.g. "DIAGNOSTICS") to server-supported status (e.g. "NEW")
         val serverStatus = when (deal.status) {
-            "NEW" -> "NEW"
-            "DIAGNOSTICS" -> "NEW"
-            "IN_PROGRESS" -> "IN_PROGRESS"
-            "AWAITING_DECISION" -> "IN_PROGRESS"
-            "AWAITING_PARTS" -> "IN_PROGRESS"
-            "READY" -> "READY"
-            "ISSUED" -> "CLOSED"
-            "CANCELLED" -> "CLOSED"
-            else -> "NEW"
+            "NEW" -> "new"
+            "DIAGNOSTICS" -> "diag"
+            "IN_PROGRESS" -> "in_progress"
+            "AWAITING_DECISION" -> "waiting_decision"
+            "AWAITING_PARTS" -> "waiting_parts"
+            "READY" -> "done"
+            "ISSUED" -> "delivered"
+            "CANCELLED" -> "canceled"
+            else -> "new"
         }
 
-        // Map detailedStatus display name from DealStatus if detailedStatus is empty
-        val resolvedDetailedStatus = deal.detailedStatus.ifEmpty {
-            try {
-                com.example.data.DealStatus.valueOf(deal.status).displayName
-            } catch (e: Exception) {
-                "Новая"
-            }
+        val resolvedDetailedStatus = when (deal.status) {
+            "NEW" -> "new"
+            "DIAGNOSTICS" -> "diag"
+            "IN_PROGRESS" -> "in_progress"
+            "AWAITING_DECISION" -> "waiting_decision"
+            "AWAITING_PARTS" -> "waiting_parts"
+            "READY" -> "done"
+            "ISSUED" -> "delivered"
+            "CANCELLED" -> "canceled"
+            else -> "new"
         }
 
         return NetworkJob(
