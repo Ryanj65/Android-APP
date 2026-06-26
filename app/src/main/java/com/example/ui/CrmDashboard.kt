@@ -1880,7 +1880,6 @@ fun DealDetailsDialog(
     // --- EDIT STATES ---
     var isEditingClient by remember { mutableStateOf(false) }
     var isAddingCar by remember { mutableStateOf(false) }
-    var expandedStatusDropdown by remember { mutableStateOf(false) }
 
     // Customer fields
     var clientName by remember { mutableStateOf(deal.clientName) }
@@ -1995,78 +1994,6 @@ fun DealDetailsDialog(
                         }
                     }
                 }
-
-                Spacer(modifier = Modifier.height(8.dp))
-
-                // STATUS DROPDOWN SELECTOR
-                Box(
-                    modifier = Modifier.fillMaxWidth().padding(vertical = 4.dp)
-                ) {
-                    OutlinedButton(
-                        onClick = { expandedStatusDropdown = true },
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(12.dp),
-                        colors = ButtonDefaults.outlinedButtonColors(
-                            containerColor = Color(android.graphics.Color.parseColor(deal.statusEnum.colorHex)).copy(alpha = 0.12f)
-                        ),
-                        border = androidx.compose.foundation.BorderStroke(
-                            2.dp,
-                            Color(android.graphics.Color.parseColor(deal.statusEnum.colorHex))
-                        )
-                    ) {
-                        Row(
-                            horizontalArrangement = Arrangement.SpaceBetween,
-                            verticalAlignment = Alignment.CenterVertically,
-                            modifier = Modifier.fillMaxWidth()
-                        ) {
-                            Row(verticalAlignment = Alignment.CenterVertically) {
-                                Box(
-                                    modifier = Modifier
-                                        .size(10.dp)
-                                        .background(Color(android.graphics.Color.parseColor(deal.statusEnum.colorHex)), CircleShape)
-                                )
-                                Spacer(modifier = Modifier.width(10.dp))
-                                Text(
-                                    text = "Статус: ${deal.statusEnum.displayName}",
-                                    fontWeight = FontWeight.Bold,
-                                    fontSize = 14.sp,
-                                    color = MaterialTheme.colorScheme.onSurface
-                                )
-                            }
-                            Icon(
-                                imageVector = Icons.Default.ArrowDropDown,
-                                contentDescription = "Выбрать статус",
-                                tint = MaterialTheme.colorScheme.onSurface
-                            )
-                        }
-                    }
-
-                    DropdownMenu(
-                        expanded = expandedStatusDropdown,
-                        onDismissRequest = { expandedStatusDropdown = false },
-                        modifier = Modifier.fillMaxWidth(0.9f)
-                    ) {
-                        DealStatus.values().forEach { dealStatus ->
-                            DropdownMenuItem(
-                                text = {
-                                    Row(verticalAlignment = Alignment.CenterVertically) {
-                                        Box(
-                                            modifier = Modifier
-                                                .size(10.dp)
-                                                .background(Color(android.graphics.Color.parseColor(dealStatus.colorHex)), CircleShape)
-                                        )
-                                        Spacer(modifier = Modifier.width(8.dp))
-                                        Text(dealStatus.displayName, fontWeight = FontWeight.Bold, fontSize = 13.sp)
-                                    }
-                                },
-                                onClick = {
-                                    viewModel.updateDeal(deal.copy(status = dealStatus.name, detailedStatus = dealStatus.displayName))
-                                    expandedStatusDropdown = false
-                                }
-                            )
-                        }
-                    }
-                }
             }
         },
         text = {
@@ -2077,6 +2004,64 @@ fun DealDetailsDialog(
                     .verticalScroll(rememberScrollState()),
                 verticalArrangement = Arrangement.spacedBy(14.dp)
             ) {
+                // STATUS SELECTOR
+                var expandedStatus by remember { mutableStateOf(false) }
+                val currentStatus = deal.statusEnum
+
+                ExposedDropdownMenuBox(
+                    expanded = expandedStatus,
+                    onExpandedChange = { expandedStatus = !expandedStatus }
+                ) {
+                    OutlinedTextField(
+                        value = currentStatus.displayName,
+                        onValueChange = {},
+                        readOnly = true,
+                        label = { Text("Статус заявки") },
+                        leadingIcon = {
+                            Box(
+                                modifier = Modifier
+                                    .size(14.dp)
+                                    .background(
+                                        Color(android.graphics.Color.parseColor(currentStatus.colorHex)),
+                                        CircleShape
+                                    )
+                            )
+                        },
+                        trailingIcon = { ExposedDropdownMenuDefaults.TrailingIcon(expanded = expandedStatus) },
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = Color(android.graphics.Color.parseColor(currentStatus.colorHex)),
+                            unfocusedBorderColor = Color(android.graphics.Color.parseColor(currentStatus.colorHex)).copy(alpha = 0.6f)
+                        ),
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .menuAnchor(MenuAnchorType.PrimaryNotEditable)
+                    )
+                    ExposedDropdownMenu(
+                        expanded = expandedStatus,
+                        onDismissRequest = { expandedStatus = false }
+                    ) {
+                        DealStatus.values().forEach { s ->
+                            DropdownMenuItem(
+                                text = {
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Box(
+                                            modifier = Modifier
+                                                .size(10.dp)
+                                                .background(Color(android.graphics.Color.parseColor(s.colorHex)), CircleShape)
+                                        )
+                                        Spacer(modifier = Modifier.width(8.dp))
+                                        Text(s.displayName, fontWeight = FontWeight.Bold)
+                                    }
+                                },
+                                onClick = {
+                                    viewModel.updateDeal(deal.copy(status = s.name))
+                                    expandedStatus = false
+                                }
+                            )
+                        }
+                    }
+                }
+
                 // PANEL 1: ЖАЛОБА, ДИАГНОСТИКА, РЕШЕНИЕ
                 Card(
                     modifier = Modifier.fillMaxWidth(),
