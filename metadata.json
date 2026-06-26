@@ -1,0 +1,6 @@
+{
+  "name": "Avtodiagnoza",
+  "description": "Sleek, highly functional CRM client application specialized for European automotive repair shops with Euro currency formatting, Slovenia phone masks, and complete repair job card fields.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
